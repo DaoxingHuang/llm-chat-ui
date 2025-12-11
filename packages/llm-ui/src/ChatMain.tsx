@@ -24,6 +24,23 @@ import InputConsole from "./components/input/InputConsole";
 import SidebarMain from "./components/layout/Sidebar";
 import SettingsModal from "./components/settings/SettingsModal";
 
+export interface ChatHooks {
+  /**
+   * Hook called before sending a message.
+   * Can be used to modify the message or filter it (by returning empty string).
+   * Supports async operations.
+   */
+  onBeforeSend?: (message: string) => Promise<string> | string;
+  
+  /**
+   * Hook called when receiving a stream chunk.
+   * Can be used to transform the incoming text chunk.
+   */
+  onStreamTransform?: (chunk: string) => string;
+}
+
+interface ChatMainProps extends ChatHooks {}
+
 const MENTIONS_LIST: TriggerItem[] = [
   {
     id: "simple-llm-chat",
@@ -81,7 +98,7 @@ const SUGGESTION_CHIPS = [
   { label: "Learn", icon: <BookOpen size={16} className="text-orange-500" />, action: "learn" }
 ];
 
-const ChatMain: React.FC = () => {
+const ChatMain: React.FC<ChatMainProps> = ({ onBeforeSend, onStreamTransform }) => {
   const {
     messages: rawMessages,
     setMessages,
@@ -234,8 +251,21 @@ const ChatMain: React.FC = () => {
   };
 
   const handleSend = async (txt?: string) => {
-    const textToSend = txt || input;
+    let textToSend = txt || input;
     if ((!textToSend.trim() && attachments.length === 0) || isGenerating) return;
+
+    if (onBeforeSend) {
+      try {
+        const processed = await onBeforeSend(textToSend);
+        if (typeof processed === "string") {
+          textToSend = processed;
+        }
+      } catch (error) {
+        console.error("Error in onBeforeSend:", error);
+      }
+    }
+
+    if (!textToSend.trim() && attachments.length === 0) return;
 
     if (!streamClientRef.current) streamClientRef.current = new StreamClient(settings.protocol);
 
@@ -295,8 +325,9 @@ const ChatMain: React.FC = () => {
         );
       },
       onContent: (token: string) => {
+        const processedToken = onStreamTransform ? onStreamTransform(token) : token;
         setMessages((prev) =>
-          prev.map((m) => (m.id === aiMsgId ? { ...m, content: m.content + token, isThinking: false } : m))
+          prev.map((m) => (m.id === aiMsgId ? { ...m, content: m.content + processedToken, isThinking: false } : m))
         );
       },
       onEnd: () => {

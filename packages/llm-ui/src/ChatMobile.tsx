@@ -3,10 +3,11 @@ import { useLLMStore } from "@llm/store";
 import React from "react";
 import ReactDOM from "react-dom";
 import ArtifactPanel from "./components/artifact/ArtifactPanel";
+import { ChatHooks } from "./ChatMain";
 import MessageItem from "./components/chat/MessageItem";
 import SettingsModal from "./components/settings/SettingsModal";
 
-const ChatMainMobileLayout: React.FC = () => {
+const ChatMainMobileLayout: React.FC<ChatHooks> = ({ onBeforeSend, onStreamTransform }) => {
   const { messages, setMessages, settings, setSettings } = useLLMStore();
   const [input, setInput] = React.useState("");
   const [isGenerating, setIsGenerating] = React.useState(false);
@@ -20,9 +21,23 @@ const ChatMainMobileLayout: React.FC = () => {
     if (messages.length > 0) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length, isGenerating]);
 
-  const handleSend = (txt?: string) => {
-    const textToSend = txt || input;
+  const handleSend = async (txt?: string) => {
+    let textToSend = txt || input;
     if (!textToSend.trim() || isGenerating) return;
+
+    if (onBeforeSend) {
+      try {
+        const processed = await onBeforeSend(textToSend);
+        if (typeof processed === "string") {
+          textToSend = processed;
+        }
+      } catch (error) {
+        console.error("Error in onBeforeSend:", error);
+      }
+    }
+
+    if (!textToSend.trim()) return;
+
     if (!streamClientRef.current) {
       streamClientRef.current = new StreamClient(settings.protocol);
     }
@@ -51,8 +66,10 @@ const ChatMainMobileLayout: React.FC = () => {
         setMessages(
           messages.map((m: any) => (m.id === aiMsgId ? { ...m, thoughtProcess: (m.thoughtProcess || "") + token } : m))
         ),
-      onContent: (token: string) =>
-        setMessages(messages.map((m: any) => (m.id === aiMsgId ? { ...m, content: m.content + token } : m))),
+      onContent: (token: string) => {
+        const processedToken = onStreamTransform ? onStreamTransform(token) : token;
+        setMessages(messages.map((m: any) => (m.id === aiMsgId ? { ...m, content: m.content + processedToken } : m)));
+      },
       onEnd: () => setMessages(messages.map((m: any) => (m.id === aiMsgId ? { ...m, isStreaming: false } : m))),
       onError: (err: any) =>
         setMessages(
@@ -127,7 +144,7 @@ const ChatMainMobileLayout: React.FC = () => {
   );
 };
 
-const ChatMobile: React.FC = () => {
+const ChatMobile: React.FC<ChatHooks> = (props) => {
   // 响应式适配，底部输入区固定，内容区滚动，适合手持
   return (
     <div
@@ -135,7 +152,7 @@ const ChatMobile: React.FC = () => {
       style={{ boxShadow: "0 0 8px 0 #e5e7eb" }}
     >
       <div className="flex-1 flex flex-col overflow-hidden">
-        <ChatMainMobileLayout />
+        <ChatMainMobileLayout {...props} />
       </div>
     </div>
   );

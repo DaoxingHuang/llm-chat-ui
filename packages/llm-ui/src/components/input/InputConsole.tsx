@@ -98,7 +98,7 @@ const InputConsole: React.FC<InputConsoleProps> = ({
         transition-all duration-500 ease-in-out z-20 
         ${
           isInputExpanded
-            ? "fixed inset-0 bg-white dark:bg-[#131314] flex flex-col p-4"
+            ? "absolute inset-0 bg-white dark:bg-[#131314] flex flex-col p-4"
             : `absolute left-0 w-full px-4 ${isHome ? "top-[50%] -translate-y-1/2" : "bottom-0 pb-6 pt-10 bg-gradient-to-t from-white dark:from-[#131314] via-white dark:via-[#131314] to-transparent pointer-events-none"}`
         }
     `}
@@ -142,7 +142,7 @@ const InputConsole: React.FC<InputConsoleProps> = ({
         )}
 
         <div
-          className={`bg-[#f0f4f9] dark:bg-[#1e1f20] rounded-[28px] border border-gray-200 dark:border-[#3c4043] shadow-lg flex flex-col transition-colors focus-within:bg-white dark:focus-within:bg-[#252627] focus-within:border-gray-300 dark:focus-within:border-[#5e5f61] ${isInputExpanded ? "flex-1" : ""}`}
+          className={`bg-[#f0f4f9] dark:bg-[#1e1f20] rounded-[28px] border border-gray-200 dark:border-[#3c4043] shadow-lg flex flex-col transition-colors focus-within:bg-white dark:focus-within:bg-[#252627] focus-within:border-gray-300 dark:focus-within:border-[#5e5f61] ${isInputExpanded ? "w-full flex-1" : ""}`}
         >
           {attachments.length > 0 && (
             <div className="flex gap-3 px-4 pt-3 overflow-x-auto">
@@ -192,7 +192,7 @@ const InputConsole: React.FC<InputConsoleProps> = ({
                 }
               }}
               placeholder="Ask Simple LLM Chat..."
-              className="flex-1 bg-transparent border-none outline-none text-gray-800 dark:text-[#e3e3e3] placeholder-gray-500 text-base resize-none custom-scrollbar h-full"
+              className="flex-1 bg-transparent border-none outline-none text-gray-800 dark:text-[#e3e3e3] placeholder-gray-500 text-base resize-none custom-scrollbar h-full w-full"
               style={{
                 minHeight: isInputExpanded ? "100%" : "24px",
                 maxHeight: isInputExpanded ? "none" : "200px"
