@@ -1,44 +1,93 @@
-# Origami Form Engine
+# Simple LLM Chat
 
-A modern, high-performance form engine built with React, TypeScript, and Tailwind CSS.
+A modern, responsive, and feature-rich LLM chat interface built with React, Tailwind CSS, and TypeScript. This monorepo project provides both PC and Mobile applications with a unified core and UI library.
+
+## Features
+
+- **Multi-Platform Support**:
+  - **PC Web**: Full-featured desktop interface with sidebar, settings, and artifact panel.
+  - **Mobile Web**: Optimized mobile experience with touch-friendly controls and responsive layout.
+- **Advanced Streaming**:
+  - Real-time response streaming.
+  - Support for Server-Sent Events (SSE) and WebSocket protocols.
+  - Extensible `StreamAdapter` architecture.
+- **Rich Content Rendering**:
+  - **Markdown**: Full Markdown support including tables, lists, and formatting.
+  - **Code Highlighting**: Syntax highlighting for code blocks with copy functionality.
+  - **Artifacts**: Dedicated panel for viewing and managing generated code or content.
+- **Thinking Process**: Visualizes the model's "Chain of Thought" or reasoning process (expandable/collapsible).
+- **Customizable Settings**:
+  - Theme switching (Light/Dark mode).
+  - Model selection.
+  - Usage modes (General, Developer, Creative).
+- **Developer Friendly**:
+  - **Monorepo**: Managed with pnpm workspaces for modular development.
+  - **Typed**: Built with TypeScript for type safety.
+  - **Modern Stack**: React, Vite, Tailwind CSS, Zustand.
 
 ## Project Structure
 
-This project is a Monorepo managed by pnpm workspaces.
+This project is organized as a monorepo:
 
-### Apps
-
-- **apps/form-builder**: A visual drag-and-drop form builder application.
-- **apps/form-runner**: A standalone form renderer application.
-
-### Packages
-
-- **packages/core**: Core logic, state management (Zustand), and schema definitions.
-- **packages/form-ui**: Shared UI components and utilities.
-- **packages/default-widgets**: Default set of form widgets (Input, Select, Date, etc.) and the `FormRunner` component.
-- **packages/ts-config**: Shared TypeScript configurations.
+- **apps/**
+  - `pc`: The desktop web application.
+  - `mobile`: The mobile web application.
+- **packages/**
+  - `core`: Core business logic, types, and streaming adapters.
+  - `ui`: Shared UI components (Chat interface, Markdown renderer, Settings).
+  - `store`: State management (Zustand stores).
+  - `utils`: Shared utility functions.
 
 ## Getting Started
 
-1. **Install Dependencies**
+### Prerequisites
 
+- Node.js (v18+)
+- pnpm (v8+)
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd llm-chat-ui
+   ```
+
+2. Install dependencies:
    ```bash
    pnpm install
    ```
 
-2. **Start Form Builder**
+### Development
 
-   ```bash
-   pnpm dev:builder
-   ```
+To start the development servers:
 
-3. **Start Form Runner**
+- **PC App**:
+  ```bash
+  pnpm dev:pc
+  ```
 
-   ```bash
-   pnpm dev:runner
-   ```
+- **Mobile App**:
+  ```bash
+  pnpm dev:mobile
+  ```
 
-## Development
+### Building
 
-- **Build all packages**: `pnpm build`
-- **Clean**: `pnpm clean`
+To build all packages and applications:
+
+```bash
+pnpm build:all
+```
+
+To build specific targets:
+
+```bash
+pnpm build:pc      # Build PC app
+pnpm build:mobile  # Build Mobile app
+pnpm build:ui      # Build UI package
+```
+
+## License
+
+MIT
