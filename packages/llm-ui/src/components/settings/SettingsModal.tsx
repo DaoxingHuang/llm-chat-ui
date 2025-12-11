@@ -23,15 +23,15 @@ const SettingsModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in text-gray-900 dark:text-gray-100">
-      <div className="w-full max-w-2xl bg-white dark:bg-[#1e1f20] rounded-2xl shadow-2xl border border-gray-200 dark:border-[#3c4043] overflow-hidden flex flex-col md:flex-row h-[500px] md:h-[600px]">
-        <div className="w-full md:w-60 bg-gray-50 dark:bg-[#252627] border-b md:border-b-0 md:border-r border-gray-200 dark:border-[#3c4043] p-4 flex flex-col">
-          <h2 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-6 px-2">Settings</h2>
-          <div className="space-y-1">
+      <div className="w-full max-w-2xl bg-white dark:bg-[#1e1f20] rounded-2xl shadow-2xl border border-gray-200 dark:border-[#3c4043] overflow-hidden flex flex-col md:flex-row h-[85vh] md:h-[600px]">
+        <div className="w-full md:w-60 bg-gray-50 dark:bg-[#252627] border-b md:border-b-0 md:border-r border-gray-200 dark:border-[#3c4043] p-4 flex flex-col shrink-0">
+          <h2 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4 md:mb-6 px-2">Settings</h2>
+          <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 no-scrollbar">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex-1 md:w-full flex items-center justify-center md:justify-start gap-2 md:gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0 whitespace-nowrap ${
                   activeTab === tab.id
                     ? "bg-gray-200 dark:bg-[#3c4043] text-gray-900 dark:text-white"
                     : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#3c4043]/50"

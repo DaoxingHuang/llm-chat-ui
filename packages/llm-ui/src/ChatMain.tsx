@@ -27,20 +27,31 @@ import SettingsModal from "./components/settings/SettingsModal";
 export interface ChatHooks {
   /**
    * Hook called before sending a message.
+   * 发送消息前调用的钩子。
+   *
    * Can be used to modify the message or filter it (by returning empty string).
+   * 可用于修改消息或过滤消息（通过返回空字符串）。
+   *
    * Supports async operations.
+   * 支持异步操作。
    */
   onBeforeSend?: (message: string) => Promise<string> | string;
 
   /**
    * Hook called when receiving a stream chunk.
+   * 接收到流分块时调用的钩子。
+   *
    * Can be used to transform the incoming text chunk.
+   * 可用于转换传入的文本分块。
    */
   onStreamTransform?: (chunk: string) => string;
 
   /**
    * Custom StreamAdapter implementation.
+   * 自定义 StreamAdapter 实现。
+   *
    * If provided, it will be used instead of the internal adapters.
+   * 如果提供，将代替内部适配器使用。
    */
   customAdapter?: StreamAdapter;
 }

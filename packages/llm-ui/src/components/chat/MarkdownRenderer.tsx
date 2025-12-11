@@ -1,70 +1,132 @@
 import { Copy, Maximize2 } from "lucide-react";
-import React, { memo } from "react";
+import { memo } from "react";
+import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import remarkGfm from "remark-gfm";
 
-const SimpleMarkdown = memo(
+/**
+ * MarkdownRenderer Component
+ * Markdown 渲染组件
+ *
+ * Uses react-markdown to render Markdown content with support for GFM (GitHub Flavored Markdown)
+ * and syntax highlighting for code blocks.
+ * 使用 react-markdown 渲染 Markdown 内容，支持 GFM（GitHub 风格 Markdown）和代码块语法高亮。
+ */
+const MarkdownRenderer = memo(
   ({ content, onCodeBlockFound }: { content: string; onCodeBlockFound?: (code: string) => void }) => {
-    const parts = content.split(/(```[\s\S]*?```)/g);
     return (
       <div className="markdown-body text-[15px] md:text-[16px] leading-7 font-light text-gray-800 dark:text-gray-200">
-        {parts.map((part, index) => {
-          if (part.startsWith("```")) {
-            const lines = part.split("\n");
-            const lang = lines[0].replace("```", "").trim();
-            const code = lines.slice(1, -1).join("\n");
-            return (
-              <div
-                key={index}
-                className="my-4 rounded-xl overflow-hidden bg-gray-50 dark:bg-[#1e1f20] border border-gray-200 dark:border-[#3c4043] group relative"
-              >
-                <div className="flex justify-between items-center px-4 py-2 bg-gray-200 dark:bg-[#2d2e30] text-xs text-gray-600 dark:text-gray-400">
-                  <span className="font-mono">{lang || "code"}</span>
-                  <div className="flex items-center gap-2">
-                    {onCodeBlockFound && (
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            code({ node, inline, className, children, ...props }: any) {
+              const match = /language-(\w+)/.exec(className || "");
+              const codeContent = String(children).replace(/\n$/, "");
+              const isMultiLine = !inline && match;
+
+              if (!isMultiLine) {
+                return (
+                  <code
+                    className={`${className} bg-gray-100 dark:bg-[#2d2e30] px-1.5 py-0.5 rounded text-sm`}
+                    {...props}
+                  >
+                    {children}
+                  </code>
+                );
+              }
+
+              return (
+                <div className="my-4 rounded-xl overflow-hidden bg-gray-50 dark:bg-[#1e1f20] border border-gray-200 dark:border-[#3c4043] group relative">
+                  <div className="flex justify-between items-center px-4 py-2 bg-gray-200 dark:bg-[#2d2e30] text-xs text-gray-600 dark:text-gray-400">
+                    <span className="font-mono">{match?.[1] || "code"}</span>
+                    <div className="flex items-center gap-2">
+                      {onCodeBlockFound && (
+                        <button
+                          onClick={() => onCodeBlockFound(codeContent)}
+                          className="flex items-center gap-1 hover:text-blue-500 transition-colors"
+                          title="Open in Canvas / 在画布中打开"
+                        >
+                          <Maximize2 size={12} />
+                          <span className="hidden sm:inline">Open Canvas</span>
+                        </button>
+                      )}
                       <button
-                        onClick={() => onCodeBlockFound(code)}
-                        className="flex items-center gap-1 hover:text-blue-500 transition-colors"
+                        onClick={() => navigator.clipboard.writeText(codeContent)}
+                        className="flex items-center gap-2 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
+                        title="Copy Code / 复制代码"
                       >
-                        <Maximize2 size={12} />
-                        <span>Open Canvas</span>
+                        <Copy size={12} />
+                        <span className="hidden sm:inline">Copy</span>
                       </button>
-                    )}
-                    <div className="flex items-center gap-2 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors">
-                      <Copy size={12} />
-                      <span>Copy</span>
                     </div>
                   </div>
+                  <div className="overflow-x-auto">
+                    <SyntaxHighlighter
+                      style={vscDarkPlus}
+                      language={match?.[1]}
+                      PreTag="div"
+                      customStyle={{ margin: 0, padding: "1rem", background: "transparent" }}
+                      {...props}
+                    >
+                      {codeContent}
+                    </SyntaxHighlighter>
+                  </div>
                 </div>
-                <div className="p-4 overflow-x-auto">
-                  <pre className="font-mono text-sm text-blue-700 dark:text-[#a8c7fa]">
-                    <code>{code}</code>
-                  </pre>
+              );
+            },
+            // Custom rendering for images to ensure they are responsive
+            // 自定义图片渲染以确保响应式
+            img({ node, ...props }) {
+              return <img {...props} className="max-w-full h-auto rounded-lg my-2 shadow-sm" />;
+            },
+            // Custom rendering for links to open in new tab
+            // 自定义链接渲染以在新标签页打开
+            a({ node, ...props }) {
+              return (
+                <a
+                  {...props}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 dark:text-blue-400 hover:underline"
+                />
+              );
+            },
+            // Custom rendering for tables
+            // 自定义表格渲染
+            table({ node, ...props }) {
+              return (
+                <div className="overflow-x-auto my-4">
+                  <table
+                    className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg"
+                    {...props}
+                  />
                 </div>
-              </div>
-            );
-          }
-          const textParts = part.split(/(\*\*.*?\*\*)/g);
-          return (
-            <span key={index}>
-              {textParts.map((t, i) => {
-                if (t.startsWith("**") && t.endsWith("**"))
-                  return (
-                    <strong key={i} className="font-medium text-gray-900 dark:text-gray-100">
-                      {t.slice(2, -2)}
-                    </strong>
-                  );
-                return t.split("\n").map((line, j) => (
-                  <React.Fragment key={`${i}-${j}`}>
-                    {line}
-                    {j < t.split("\n").length - 1 && <br />}
-                  </React.Fragment>
-                ));
-              })}
-            </span>
-          );
-        })}
+              );
+            },
+            th({ node, ...props }) {
+              return (
+                <th
+                  className="px-3 py-2 bg-gray-50 dark:bg-[#2d2e30] text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                  {...props}
+                />
+              );
+            },
+            td({ node, ...props }) {
+              return (
+                <td
+                  className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700"
+                  {...props}
+                />
+              );
+            }
+          }}
+        >
+          {content}
+        </ReactMarkdown>
       </div>
     );
   }
 );
 
-export default SimpleMarkdown;
+export default MarkdownRenderer;

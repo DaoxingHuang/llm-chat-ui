@@ -1,10 +1,32 @@
 import type { StreamCallbacks, StreamRequest } from "./types";
 
+/**
+ * Abstract base class for stream adapters.
+ * 流适配器抽象基类。
+ *
+ * Defines the interface for connecting and disconnecting from a stream source.
+ * 定义连接和断开流源的接口。
+ */
 export abstract class StreamAdapter {
+  /**
+   * Connect to the stream source.
+   * 连接到流源。
+   * @param request The stream request object / 流请求对象
+   * @param callbacks Callbacks for stream events / 流事件回调
+   */
   abstract connect(request: StreamRequest, callbacks: StreamCallbacks): void;
+
+  /**
+   * Disconnect from the stream source.
+   * 断开流源连接。
+   */
   abstract disconnect(): void;
 }
 
+/**
+ * Mock implementation of StreamAdapter for testing and development.
+ * 用于测试和开发的 StreamAdapter 模拟实现。
+ */
 export class MockStreamAdapter extends StreamAdapter {
   private aborted = false;
 
@@ -52,6 +74,13 @@ export class MockStreamAdapter extends StreamAdapter {
   }
 }
 
+/**
+ * Server-Sent Events (SSE) implementation of StreamAdapter.
+ * StreamAdapter 的服务器发送事件 (SSE) 实现。
+ *
+ * Uses HTTP POST to send the request and receives the response via SSE.
+ * 使用 HTTP POST 发送请求，并通过 SSE 接收响应。
+ */
 export class SSEStreamAdapter extends StreamAdapter {
   private controller: AbortController | null = null;
   private endpoint: string;
@@ -116,6 +145,13 @@ export class SSEStreamAdapter extends StreamAdapter {
   }
 }
 
+/**
+ * WebSocket implementation of StreamAdapter.
+ * StreamAdapter 的 WebSocket 实现。
+ *
+ * Uses a full-duplex WebSocket connection for streaming.
+ * 使用全双工 WebSocket 连接进行流式传输。
+ */
 export class WebSocketStreamAdapter extends StreamAdapter {
   private ws: WebSocket | null = null;
   private url: string;
@@ -158,9 +194,20 @@ export class WebSocketStreamAdapter extends StreamAdapter {
   }
 }
 
+/**
+ * Main client for handling stream operations.
+ * 处理流操作的主客户端。
+ *
+ * Acts as a factory and facade for different stream adapters.
+ * 充当不同流适配器的工厂和外观。
+ */
 export class StreamClient {
   private adapter: StreamAdapter;
 
+  /**
+   * @param protocolOrAdapter Protocol string ('mock', 'sse', 'websocket') or custom StreamAdapter instance / 协议字符串或自定义适配器实例
+   * @param endpoint Optional endpoint URL for SSE or WebSocket / SSE 或 WebSocket 的可选端点 URL
+   */
   constructor(protocolOrAdapter: "mock" | "sse" | "websocket" | StreamAdapter = "mock", endpoint?: string) {
     if (typeof protocolOrAdapter === "object") {
       this.adapter = protocolOrAdapter;
