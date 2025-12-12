@@ -1,4 +1,4 @@
-import type { Attachment, Message, StreamAdapter, StreamCallbacks, StreamRequest, TriggerItem } from "@llm/core";
+import type { Attachment, Message, StreamAdapter, StreamRequest, TriggerItem } from "@llm/core";
 import { StreamClient } from "@llm/core";
 import { useLLMStore } from "@llm/store";
 import {
@@ -13,6 +13,7 @@ import {
   Menu,
   PenTool,
   Sparkles,
+  User,
   Video,
   Wrench,
   Zap
@@ -23,6 +24,7 @@ import MessageItem from "./components/chat/MessageItem";
 import InputConsole from "./components/input/InputConsole";
 import SidebarMain from "./components/layout/Sidebar";
 import SettingsModal from "./components/settings/SettingsModal";
+import { useLLMStream } from "./hooks/useLLMStream";
 
 export interface ChatHooks {
   /**
@@ -54,6 +56,15 @@ export interface ChatHooks {
    * 如果提供，将代替内部适配器使用。
    */
   customAdapter?: StreamAdapter;
+
+  /**
+   * Custom file upload handler.
+   * 自定义文件上传处理程序。
+   *
+   * If provided, it will be used to handle file uploads.
+   * 如果提供，将用于处理文件上传。
+   */
+  onFileUpload?: (file: File) => Promise<Attachment>;
 }
 
 interface ChatMainProps extends ChatHooks {}
@@ -82,6 +93,12 @@ const MENTIONS_LIST: TriggerItem[] = [
     label: "Drive",
     icon: <HardDrive size={14} className="text-green-600 dark:text-green-500" />,
     description: "Access files"
+  },
+  {
+    id: "user-info",
+    label: "User Info",
+    icon: <User size={14} className="text-purple-600 dark:text-purple-500" />,
+    description: "Query User Profile"
   }
 ];
 
@@ -115,7 +132,7 @@ const SUGGESTION_CHIPS = [
   { label: "Learn", icon: <BookOpen size={16} className="text-orange-500" />, action: "learn" }
 ];
 
-const ChatMain: React.FC<ChatMainProps> = ({ onBeforeSend, onStreamTransform, customAdapter }) => {
+const ChatMain: React.FC<ChatMainProps> = ({ onBeforeSend, onStreamTransform, customAdapter, onFileUpload }) => {
   const {
     messages: rawMessages,
     setMessages,
@@ -131,7 +148,7 @@ const ChatMain: React.FC<ChatMainProps> = ({ onBeforeSend, onStreamTransform, cu
   const sessions = useMemo(() => (Array.isArray(rawSessions) ? rawSessions : []), [rawSessions]);
 
   const [input, setInput] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  // const [isGenerating, setIsGenerating] = useState(false); // Replaced by useLLMStream
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -147,7 +164,13 @@ const ChatMain: React.FC<ChatMainProps> = ({ onBeforeSend, onStreamTransform, cu
   const [artifactContent, setArtifactContent] = useState<string>("");
 
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const streamClientRef = useRef<StreamClient | null>(null);
+  // const streamClientRef = useRef<StreamClient | null>(null); // Replaced by useLLMStream
+  const streamClient = useMemo(
+    () => new StreamClient(customAdapter || settings.protocol),
+    [customAdapter, settings.protocol]
+  );
+  const { isStreaming, trigger, stop } = useLLMStream({ streamClient });
+
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -190,7 +213,7 @@ const ChatMain: React.FC<ChatMainProps> = ({ onBeforeSend, onStreamTransform, cu
 
   useEffect(() => {
     if (messages.length > 0) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, isGenerating]);
+  }, [messages.length, isStreaming]);
 
   // Handle outside clicks
   useEffect(() => {
@@ -244,12 +267,22 @@ const ChatMain: React.FC<ChatMainProps> = ({ onBeforeSend, onStreamTransform, cu
     if (window.innerWidth < 768) setSidebarOpen(false);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const type = file.type.startsWith("image/") ? "image" : "file";
-      const previewUrl = URL.createObjectURL(file);
-      setAttachments((prev) => [...prev, { id: Date.now().toString(), file, previewUrl, type }]);
+
+      if (onFileUpload) {
+        try {
+          const attachment = await onFileUpload(file);
+          setAttachments((prev) => [...prev, attachment]);
+        } catch (error) {
+          console.error("File upload failed:", error);
+        }
+      } else {
+        const type = file.type.startsWith("image/") ? "image" : "file";
+        const previewUrl = URL.createObjectURL(file);
+        setAttachments((prev) => [...prev, { id: Date.now().toString(), file, previewUrl, type }]);
+      }
       setPlusMenuOpen(false);
     }
   };
@@ -261,15 +294,33 @@ const ChatMain: React.FC<ChatMainProps> = ({ onBeforeSend, onStreamTransform, cu
   const handleEditMessage = (msgId: string, newContent: string) => {
     const msgIndex = messages.findIndex((m) => m.id === msgId);
     if (msgIndex === -1) return;
+
+    // Get the original message to preserve attachments
+    const originalMsg = messages[msgIndex];
+
+    // Keep messages up to the edited one (exclusive)
     const updatedMessages = messages.slice(0, msgIndex);
     setMessages(updatedMessages);
+
+    // Restore attachments from the original message if any
+    if (originalMsg.attachments && originalMsg.attachments.length > 0) {
+      setAttachments(originalMsg.attachments);
+    }
+
     setInput(newContent);
-    handleSend(newContent);
+    // We need to defer the send slightly to ensure state updates or pass attachments directly
+    // But handleSend uses the 'attachments' state.
+    // Since setState is async, we should pass attachments explicitly to handleSend if possible,
+    // OR modify handleSend to accept attachments as an argument.
+    // For now, let's modify handleSend to accept optional attachments override.
+    handleSend(newContent, originalMsg.attachments);
   };
 
-  const handleSend = async (txt?: string) => {
+  const handleSend = async (txt?: string, overrideAttachments?: Attachment[]) => {
     let textToSend = txt || input;
-    if ((!textToSend.trim() && attachments.length === 0) || isGenerating) return;
+    const currentAttachments = overrideAttachments || attachments;
+
+    if ((!textToSend.trim() && currentAttachments.length === 0) || isStreaming) return;
 
     if (onBeforeSend) {
       try {
@@ -282,11 +333,7 @@ const ChatMain: React.FC<ChatMainProps> = ({ onBeforeSend, onStreamTransform, cu
       }
     }
 
-    if (!textToSend.trim() && attachments.length === 0) return;
-
-    if (!streamClientRef.current) {
-      streamClientRef.current = new StreamClient(customAdapter || settings.protocol);
-    }
+    if (!textToSend.trim() && currentAttachments.length === 0) return;
 
     setTriggerType(null);
     setIsInputExpanded(false);
@@ -296,13 +343,15 @@ const ChatMain: React.FC<ChatMainProps> = ({ onBeforeSend, onStreamTransform, cu
       role: "user",
       content: textToSend,
       timestamp: Date.now(),
-      attachments: [...attachments]
+      attachments: [...currentAttachments]
     };
+
+    // Clear attachments state only if we didn't use override (which implies a re-send/edit)
+    // Actually we should always clear the input attachments state after sending
     setAttachments([]);
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
     setInput("");
-    setIsGenerating(true);
 
     // Update sessions
     if (!currentSessionId) {
@@ -337,7 +386,7 @@ const ChatMain: React.FC<ChatMainProps> = ({ onBeforeSend, onStreamTransform, cu
       config: { useThinking: isThinkingModel }
     };
 
-    const callbacks: StreamCallbacks = {
+    trigger(request, {
       onThinking: (token: string) => {
         setMessages((prev) =>
           prev.map((m) => (m.id === aiMsgId ? { ...m, thoughtProcess: (m.thoughtProcess || "") + token } : m))
@@ -351,7 +400,6 @@ const ChatMain: React.FC<ChatMainProps> = ({ onBeforeSend, onStreamTransform, cu
       },
       onEnd: () => {
         setMessages((prev) => prev.map((m) => (m.id === aiMsgId ? { ...m, isStreaming: false } : m)));
-        setIsGenerating(false);
       },
       onError: (err: Error) => {
         setMessages((prev) =>
@@ -359,11 +407,8 @@ const ChatMain: React.FC<ChatMainProps> = ({ onBeforeSend, onStreamTransform, cu
             m.id === aiMsgId ? { ...m, content: m.content + `\n[Error: ${err.message}]`, isStreaming: false } : m
           )
         );
-        setIsGenerating(false);
       }
-    };
-
-    streamClientRef.current.stream(request, callbacks);
+    });
   };
 
   return (
@@ -486,6 +531,8 @@ const ChatMain: React.FC<ChatMainProps> = ({ onBeforeSend, onStreamTransform, cu
             isHome={isHome}
             showCanvasBadge={showCanvasBadge}
             setShowCanvasBadge={setShowCanvasBadge}
+            isStreaming={isStreaming}
+            onStop={stop}
           />
         </main>
 
