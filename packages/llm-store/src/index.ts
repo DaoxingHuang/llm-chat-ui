@@ -1,6 +1,7 @@
 import type { ChatSession, Message, UserSettings } from "@llm/core";
+import { del, get, set } from "idb-keyval";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist, StateStorage } from "zustand/middleware";
 
 interface StoreState {
   sessions: ChatSession[];
@@ -23,6 +24,51 @@ const DEFAULT_SETTINGS: UserSettings = {
   safetyLevel: "medium",
   protocol: "mock"
 };
+
+// Storage Types
+export type StorageType = "local" | "indexeddb" | "server";
+
+// Storage Factory
+class StorageFactory {
+  static create(type: StorageType = "local"): StateStorage {
+    switch (type) {
+      case "indexeddb":
+        return {
+          getItem: async (name: string): Promise<string | null> => {
+            return (await get(name)) || null;
+          },
+          setItem: async (name: string, value: string): Promise<void> => {
+            await set(name, value);
+          },
+          removeItem: async (name: string): Promise<void> => {
+            await del(name);
+          }
+        };
+      case "server":
+        return {
+          getItem: async (name: string): Promise<string | null> => {
+            console.warn("Server storage not implemented yet");
+            // TODO: Implement server-side storage fetch
+            return null;
+          },
+          setItem: async (name: string, value: string): Promise<void> => {
+            console.warn("Server storage not implemented yet");
+            // TODO: Implement server-side storage save
+          },
+          removeItem: async (name: string): Promise<void> => {
+            console.warn("Server storage not implemented yet");
+            // TODO: Implement server-side storage delete
+          }
+        };
+      case "local":
+      default:
+        return localStorage;
+    }
+  }
+}
+
+// Configure storage type here
+const CURRENT_STORAGE_TYPE: StorageType = "local";
 
 export const useLLMStore = create<StoreState>()(
   persist(
@@ -47,7 +93,19 @@ export const useLLMStore = create<StoreState>()(
     }),
     {
       name: "llm-chat-store",
-      getStorage: () => localStorage // 可替换为 indexdb 封装 或是 服务端存储
+      version: 1, // Increment this if you change the store structure
+      migrate: (persistedState, version) => {
+        if (version === 1) {
+          // Ensure persistedState is an object before spreading to avoid TS errors
+          if (persistedState != null && typeof persistedState === "object") {
+            return { ...(persistedState as Record<string, unknown>), token: null };
+          }
+          return { token: null };
+        }
+        return persistedState;
+      },
+      // Use the factory to create the storage adapter
+      storage: createJSONStorage(() => StorageFactory.create(CURRENT_STORAGE_TYPE))
     }
   )
 );
