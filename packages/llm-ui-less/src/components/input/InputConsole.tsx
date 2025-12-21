@@ -56,7 +56,7 @@ const InputConsole: React.FC<InputConsoleProps> = ({
   isInputExpanded,
   setIsInputExpanded,
   attachments,
-  removeAttachment: _removeAttachment,
+  removeAttachment,
   activeTags,
   removeTag,
   triggerType,
