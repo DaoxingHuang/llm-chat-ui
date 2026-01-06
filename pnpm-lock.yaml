@@ -202,6 +202,31 @@ importers:
         specifier: ^5.0.0
         version: 5.4.21(@types/node@24.10.2)(less@4.5.1)(lightningcss@1.30.2)(terser@5.44.1)
 
+  apps/pc-components:
+    dependencies:
+      '@ant-design/icons':
+        specifier: ^6.1.0
+        version: 6.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@llm/pc-components':
+        specifier: workspace:*
+        version: link:../../packages/llm-pc-components
+      '@llm/ui-less':
+        specifier: workspace:*
+        version: link:../../packages/llm-ui-less
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vite:
+        specifier: ^5.0.0
+        version: 5.4.21(@types/node@24.10.2)(less@4.5.1)(lightningcss@1.30.2)(terser@5.44.1)
+
   apps/pc-less:
     dependencies:
       '@llm/store':
@@ -229,6 +254,25 @@ importers:
       vitest:
         specifier: ^0.32.4
         version: 0.32.4(jsdom@27.3.0(postcss@8.5.6))(less@4.5.1)(lightningcss@1.30.2)(terser@5.44.1)
+
+  packages/llm-pc-components:
+    dependencies:
+      '@ant-design/icons':
+        specifier: ^6.1.0
+        version: 6.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@llm/core':
+        specifier: workspace:*
+        version: link:../llm-core
+      '@llm/ui-less':
+        specifier: workspace:*
+        version: link:../llm-ui-less
+    devDependencies:
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
 
   packages/llm-store:
     dependencies:

@@ -1,0 +1,22 @@
+{
+  "name": "@llm/app-pc-components",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@llm/ui-less": "workspace:*",
+    "@llm/pc-components": "workspace:*",
+    "@ant-design/icons": "^6.1.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "typescript": "^5.0.0"
+  }
+}
