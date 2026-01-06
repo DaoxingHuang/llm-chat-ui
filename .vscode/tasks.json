@@ -98,6 +98,55 @@
 			"command": "pnpm build:mobile-less",
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "build:pc-components",
+			"type": "shell",
+			"command": "pnpm --filter @llm/pc-components build",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "build:pc-components",
+			"type": "shell",
+			"command": "pnpm --filter @llm/pc-components build",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "build:pc-components",
+			"type": "shell",
+			"command": "pnpm --filter @llm/pc-components build",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "build:pc-components",
+			"type": "shell",
+			"command": "pnpm --filter @llm/pc-components build",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "build:pc-components",
+			"type": "shell",
+			"command": "pnpm --filter @llm/pc-components build",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "build:pc-components",
+			"type": "shell",
+			"command": "pnpm --filter @llm/pc-components build",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "build:pc-components",
+			"type": "shell",
+			"command": "pnpm --filter @llm/pc-components build",
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }
